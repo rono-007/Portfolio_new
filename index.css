@@ -1,0 +1,980 @@
+/* ========================================
+   Design System — Ranajoy Nag Portfolio
+   Minimal. Typographic. Intentional.
+======================================== */
+
+:root {
+  --bg: #f5f3f0;
+  --fg: #1a1a1a;
+  --muted: #8a8a8a;
+  --border: #e0ddd8;
+  --accent: #1a1a1a;
+  --serif: 'Instrument Serif', Georgia, serif;
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+:root.dark-mode {
+  --bg: #111111;
+  --fg: #e6e3df;
+  --muted: #666666;
+  --border: #333333;
+  --accent: #c8ff00;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: auto;
+  /* GSAP handles smooth scroll */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-weight: 400;
+  line-height: 1.6;
+  overflow-x: hidden;
+  transition: background 0.8s ease, color 0.8s ease;
+}
+
+
+
+::selection {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+/* ========================================
+   Layout
+======================================== */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 5vw, 80px);
+}
+
+/* ========================================
+   Typography
+======================================== */
+.heading-xl {
+  font-family: var(--serif);
+  font-size: clamp(2.8rem, 8vw, 6.5rem);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.heading-lg {
+  font-family: var(--serif);
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.heading-md {
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.body-text {
+  font-size: clamp(0.95rem, 1.2vw, 1.1rem);
+  line-height: 1.7;
+  color: var(--muted);
+  font-weight: 300;
+}
+
+.label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* ========================================
+   Divider
+======================================== */
+.divider {
+  width: 100%;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ========================================
+   Link hover — underline draw
+======================================== */
+.link-hover {
+  position: relative;
+  display: inline-block;
+}
+
+.link-hover::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--fg);
+  transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.link-hover:hover::after {
+  width: 100%;
+}
+
+/* ========================================
+   Project row hover
+======================================== */
+.project-row {
+  position: relative;
+  padding: clamp(24px, 4vw, 48px) 0;
+  border-bottom: 1px solid var(--border);
+  cursor: default;
+  transition: background 0.5s ease;
+}
+
+.project-row:first-child {
+  border-top: 1px solid var(--border);
+}
+
+.project-row:hover {
+  background: rgba(0, 0, 0, 0.015);
+}
+
+.project-row .project-index {
+  transition: color 0.4s ease;
+}
+
+.project-row:hover .project-index {
+  color: var(--fg);
+}
+
+.project-row .project-arrow {
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.project-row:hover .project-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ========================================
+   Skill tag
+======================================== */
+.skill-tag {
+  display: inline-block;
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.skill-tag:hover {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+}
+
+/* ========================================
+   Nav
+======================================== */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 24px 0;
+  background: transparent;
+  mix-blend-mode: difference;
+}
+
+.nav * {
+  color: #fff;
+}
+
+/* ========================================
+   Scroll progress
+======================================== */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  background: var(--fg);
+  z-index: 999;
+  transform-origin: left;
+  transform: scaleX(0);
+  will-change: transform;
+}
+
+/* ========================================
+   Cursor dot (desktop only)
+======================================== */
+@media (hover: hover) and (pointer: fine) {
+  .cursor-dot {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 8px;
+    height: 8px;
+    background: var(--fg);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    mix-blend-mode: difference;
+    transition: width 0.3s, height 0.3s, margin 0.3s;
+  }
+
+  .cursor-dot.expanded {
+    width: 40px;
+    height: 40px;
+    margin: -16px 0 0 -16px;
+    background: rgba(255, 255, 255, 0.15);
+    mix-blend-mode: normal;
+  }
+}
+
+/* ========================================
+   Reveal clip — used by GSAP
+======================================== */
+.reveal-text {
+  clip-path: inset(0 0 100% 0);
+}
+
+.reveal-up {
+  opacity: 0;
+  transform: translateY(40px);
+}
+
+/* ========================================
+   Footer
+======================================== */
+.footer-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  font-size: 0.85rem;
+  transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+  color: var(--fg);
+}
+
+.footer-link svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.3s ease;
+}
+
+.footer-link:hover svg {
+  transform: translate(2px, -2px);
+}
+
+/* ========================================
+   Responsive
+======================================== */
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .project-row .project-arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* Override text and tag margins inside project row */
+  .project-row p.project-desc,
+  .project-row .project-tags {
+    margin-left: 0 !important;
+  }
+
+  /* Reduce typography clamps slightly to prevent overflow */
+  .heading-xl {
+    font-size: clamp(2.4rem, 12vw, 4rem) !important;
+  }
+
+  /* Adjust hero layout spacing */
+  .hero-section {
+    padding-top: 12vh !important;
+  }
+
+  .skills-bg-text {
+    font-size: clamp(4rem, 15vw, 8rem) !important;
+  }
+
+  /* Adjust skills track spacing */
+  .skills-track {
+    gap: 32px !important;
+  }
+
+  .skills-track .skill-card {
+    min-width: 140px;
+    padding: 16px;
+  }
+
+  /* Footnote mobile adjustments */
+  .footnote-popup {
+    width: 250px;
+  }
+
+  .container {
+    padding: 0 24px;
+  }
+
+  /* Slide-Over Project Drawer mobile full width */
+  .project-drawer {
+    width: 100% !important;
+    padding: 24px 16px !important;
+  }
+
+  .drawer-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* ========================================
+   Smooth scrollbar styling
+======================================== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* ========================================
+   Customizations
+======================================== */
+.noise-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0.04;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+:root.dark-mode .noise-overlay {
+  mix-blend-mode: screen;
+  opacity: 0.05;
+}
+
+.hero-line {
+  transition: opacity 0.1s;
+  padding-bottom: 0.25em;
+}
+
+:root.dark-mode .hero-line {
+  color: var(--accent);
+}
+
+.project-preview-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 320px;
+  height: 220px;
+  pointer-events: none;
+  z-index: 40;
+  opacity: 0;
+  transform: scale(0.8) translate(-50%, -50%);
+  overflow: hidden;
+  will-change: transform, opacity;
+  border-radius: 4px;
+}
+
+.project-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(100%);
+}
+
+.skills-progress-container {
+  position: absolute;
+  bottom: 40px;
+  left: clamp(20px, 5vw, 80px);
+  width: 200px;
+  height: 1px;
+  background: var(--border);
+}
+
+.skills-progress-bar {
+  height: 100%;
+  background: var(--fg);
+  transform-origin: left;
+  transform: scaleX(0);
+  will-change: transform;
+}
+
+.split-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.split-char {
+  display: inline-block;
+}
+
+.magnetic {
+  display: inline-block;
+}
+
+/* ========================================
+   Marquee Band
+======================================== */
+.marquee-band {
+  overflow: hidden;
+  padding: 48px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.marquee-track {
+  display: flex;
+  align-items: center;
+  gap: clamp(24px, 4vw, 48px);
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.marquee-item {
+  font-size: clamp(2rem, 6vw, 5rem) !important;
+  opacity: 0.15;
+  transition: opacity 0.4s ease;
+  -webkit-text-stroke: 1px var(--fg);
+  color: transparent;
+}
+
+.marquee-item:hover {
+  opacity: 1;
+  color: var(--fg);
+  -webkit-text-stroke: 0;
+}
+
+.marquee-dot {
+  font-size: 0.5rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+/* ========================================
+   Skill Cards
+======================================== */
+.skill-card {
+  padding: clamp(20px, 3vw, 32px);
+  border: 1px solid var(--border);
+  min-width: 160px;
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  cursor: default;
+}
+
+.skill-card:hover {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+  transform: translateY(-4px);
+}
+
+.skill-card:hover .label {
+  color: var(--bg);
+  opacity: 0.5;
+}
+
+/* ========================================
+   Education Rows
+======================================== */
+.edu-row {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+/* ========================================
+   Counter Values
+======================================== */
+.counter-value {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ========================================
+   Skills Section (Horizontal Scroll — Black Block)
+======================================== */
+.skills-section {
+  background: #0a0a0a !important;
+  color: #f5f3f0 !important;
+  border-top: 1px solid #1a1a1a;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.skills-section .label {
+  color: #8a8a8a !important;
+}
+
+.skills-section .body-text {
+  color: #a0a0a0 !important;
+}
+
+.skills-section .skills-track {
+  z-index: 2;
+  position: relative;
+}
+
+.skills-section .skill-card {
+  background: #121212;
+  border-color: #222;
+  color: #e6e3df;
+  border-radius: 4px;
+}
+
+.skills-section .skill-card:hover {
+  background: var(--accent, #c8ff00);
+  color: #000;
+  border-color: var(--accent, #c8ff00);
+}
+
+.skills-section .skill-card:hover .label {
+  color: #000 !important;
+  opacity: 0.7;
+}
+
+.skills-bg-text {
+  position: absolute;
+  top: 55%;
+  left: 0;
+  transform: translateY(-50%);
+  font-family: var(--serif);
+  font-size: clamp(8rem, 20vw, 16rem);
+  font-weight: 400;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.05);
+  color: transparent;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1;
+  will-change: transform;
+}
+
+.skills-section .skills-progress-container {
+  position: absolute;
+  bottom: 40px;
+  left: clamp(20px, 5vw, 80px);
+  width: 200px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  z-index: 10;
+}
+
+.skills-section .skills-progress-bar {
+  height: 100%;
+  background: #e6e3df;
+  transform-origin: left;
+  transform: scaleX(0);
+  will-change: transform;
+}
+
+/* ========================================
+   Preloader Overlay
+======================================== */
+.preloader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  will-change: transform;
+}
+
+.preloader-text-wrapper {
+  text-align: center;
+  will-change: transform, opacity;
+}
+
+.preloader-number {
+  font-family: var(--serif);
+  font-size: clamp(6rem, 18vw, 15rem);
+  font-weight: 300;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+}
+
+.preloader-label {
+  font-size: 0.8rem;
+  font-weight: 400;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 16px;
+}
+
+/* ========================================
+   Viewport Border Frame & Corners
+======================================== */
+.viewport-frame {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 990;
+}
+
+.viewport-frame .v-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+  opacity: 0.8;
+}
+
+.viewport-frame .v-line.left {
+  left: 40px;
+}
+
+.viewport-frame .v-line.right {
+  right: 40px;
+}
+
+.viewport-frame .h-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border);
+  opacity: 0.8;
+}
+
+.viewport-frame .h-line.top {
+  top: 40px;
+}
+
+.viewport-frame .h-line.bottom {
+  bottom: 40px;
+}
+
+.corner-meta {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: auto;
+  z-index: 995;
+}
+
+.corner-meta.top-left {
+  top: 52px;
+  left: 56px;
+}
+
+.corner-meta.top-right {
+  top: 52px;
+  right: 56px;
+  align-items: flex-end;
+}
+
+.corner-meta.bottom-left {
+  bottom: 52px;
+  left: 56px;
+}
+
+.corner-meta.bottom-right {
+  bottom: 52px;
+  right: 56px;
+  align-items: flex-end;
+}
+
+.meta-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.meta-value {
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  color: var(--fg);
+}
+
+/* Adjust layout space so it fits beautifully inside viewport frame borders */
+@media (min-width: 1025px) {
+  .nav {
+    padding: 56px 0 24px;
+    left: 40px;
+    right: 40px;
+  }
+
+  .nav .container {
+    padding: 0 16px;
+  }
+}
+
+/* ========================================
+   Paper Footnote & Quotes
+======================================== */
+.footnote-section {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.citation-ref {
+  display: inline-block;
+  font-family: var(--sans);
+  transition: color 0.3s ease;
+}
+
+.footnote-popup {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-12px);
+  width: clamp(220px, 60vw, 300px);
+  background: var(--fg);
+  color: var(--bg);
+  padding: 16px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  font-family: var(--sans);
+  border-radius: 4px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  z-index: 100;
+  white-space: normal;
+  text-align: left;
+  opacity: 0;
+  animation: fadeInFootnote 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.footnote-popup::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: var(--fg) transparent transparent transparent;
+}
+
+@keyframes fadeInFootnote {
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-8px);
+  }
+}
+
+/* ========================================
+   Social Links Handles Tooltips
+======================================= */
+.social-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: var(--fg);
+  color: var(--bg);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-family: var(--sans);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+  z-index: 20;
+}
+
+.footer-link:hover .social-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-8px);
+}
+
+/* ========================================
+   Slide-Over Project Drawer
+======================================== */
+.drawer-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(0px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease, backdrop-filter 0.5s ease;
+  z-index: 10000;
+}
+
+.drawer-backdrop.visible {
+  opacity: 1;
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+}
+
+.project-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: clamp(320px, 45vw, 600px);
+  height: 100%;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  box-shadow: -15px 0 40px rgba(0, 0, 0, 0.05);
+  transform: translateX(100%);
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 10001;
+  padding: clamp(24px, 4vw, 48px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-close {
+  align-self: flex-end;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  transition: all 0.3s ease;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 32px;
+}
+
+.drawer-close:hover {
+  color: var(--fg);
+  border-color: var(--fg);
+}
+
+.drawer-content {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.drawer-img-container {
+  width: 100%;
+  height: 240px;
+  overflow: hidden;
+  border-radius: 4px;
+}
+
+.drawer-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.drawer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 0;
+}
+
+/* ========================================
+   Stack Card (Pinning Sections)
+   ======================================== */
+.stack-card {
+  position: relative;
+  background: var(--bg);
+  box-shadow: 0 -20px 40px rgba(0,0,0,0.02);
+  transition: background 0.8s ease;
+  will-change: transform;
+}
+
+:root.dark-mode .stack-card {
+  box-shadow: 0 -20px 40px rgba(0,0,0,0.4);
+}
+
+.hero-section.stack-card { z-index: 1; }
+.about-section.stack-card { z-index: 2; }
+.footnote-section.stack-card { z-index: 3; }
+
+.projects-section.stack-card { z-index: 4; }
+
+.skills-section.stack-card { z-index: 5; background: #0a0a0a; }
+
+.experience-section.stack-card { z-index: 6; }
+.education-section.stack-card { z-index: 7; }
+.contact-section.stack-card { z-index: 8; }
