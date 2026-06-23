@@ -32,7 +32,7 @@ export const Header: React.FC = () => {
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-none overflow-hidden flex-shrink-0 border border-muted/20 bg-surface">
               <img 
-                src="assets/1000601855%20%281%29.jpg" 
+                src="assets/me.jpg" 
                 alt="Ranajoy Nag" 
                 className="w-full h-full object-cover grayscale" 
               />
