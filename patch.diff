@@ -1,0 +1,461 @@
+﻿diff --git a/App.tsx b/App.tsx
+index 94af063..755c93d 100644
+--- a/App.tsx
++++ b/App.tsx
+@@ -1,7 +1,8 @@
+ import React, { useEffect, useRef, useState } from 'react';
++import { flushSync } from 'react-dom';
+ import gsap from 'gsap';
+ import { ScrollTrigger } from 'gsap/ScrollTrigger';
+-import Lenis from 'lenis';
++import { motion } from 'framer-motion';
+ 
+ gsap.registerPlugin(ScrollTrigger);
+ 
+@@ -159,7 +160,6 @@ function App() {
+   const mainRef = useRef<HTMLDivElement>(null);
+   const cursorRef = useRef<HTMLDivElement>(null);
+   const progressRef = useRef<HTMLDivElement>(null);
+-  const lenisRef = useRef<any>(null);
+   const projectPreviewRef = useRef<HTMLDivElement>(null);
+ 
+   useEffect(() => {
+@@ -167,6 +167,44 @@ function App() {
+     else document.documentElement.classList.remove('dark-mode');
+   }, [isDarkMode]);
+ 
++  const toggleDarkMode = (e: React.MouseEvent) => {
++    const x = e.clientX;
++    const y = e.clientY;
++    
++    const endRadius = Math.hypot(
++      Math.max(x, window.innerWidth - x),
++      Math.max(y, window.innerHeight - y)
++    );
++
++    if (!document.startViewTransition) {
++      setIsDarkMode(prev => !prev);
++      return;
++    }
++
++    const transition = document.startViewTransition(() => {
++      flushSync(() => {
++        setIsDarkMode(prev => !prev);
++      });
++    });
++
++    transition.ready.then(() => {
++      const clipPath = [
++        `circle(0px at ${x}px ${y}px)`,
++        `circle(${endRadius}px at ${x}px ${y}px)`
++      ];
++      document.documentElement.animate(
++        {
++          clipPath: clipPath
++        },
++        {
++          duration: 500,
++          easing: 'ease-in-out',
++          pseudoElement: '::view-transition-new(root)'
++        }
++      );
++    });
++  };
++
+   useEffect(() => {
+     const updateTime = () => {
+       const now = new Date();
+@@ -185,32 +223,12 @@ function App() {
+   useEffect(() => {
+     if (isLoading || activeProject !== null) {
+       document.body.style.overflow = 'hidden';
+-      lenisRef.current?.stop();
+     } else {
+       document.body.style.overflow = '';
+-      lenisRef.current?.start();
+     }
+   }, [isLoading, activeProject]);
+ 
+   useEffect(() => {
+-    // â”€â”€ Lenis Smooth Scroll â”€â”€
+-    const lenis = new Lenis({
+-      autoRaf: false,
+-      lerp: 0.1, // standard linear interpolation, more responsive than slow duration ease
+-      smoothWheel: true,
+-    });
+-    lenisRef.current = lenis;
+-    lenis.stop(); // Stop scroll immediately on mount
+-
+-    lenis.on('scroll', ScrollTrigger.update);
+-
+-    // Sync Lenis with GSAP ticker loop and remove to prevent memory leaks/duplicate calls
+-    const updateLenis = (time: number) => {
+-      lenis.raf(time * 1000);
+-    };
+-    gsap.ticker.add(updateLenis);
+-    gsap.ticker.lagSmoothing(0);
+-
+     const ctx = gsap.context(() => {
+       // â”€â”€ Preloader Timeline â”€â”€
+       const countObj = { val: 0 };
+@@ -220,7 +238,6 @@ function App() {
+       const preloaderTimeline = gsap.timeline({
+         onComplete: () => {
+           setIsLoading(false);
+-          lenis.start();
+           heroTl.play();
+ 
+           gsap.utils.toArray<HTMLElement>('.meta-label').forEach((el) => {
+@@ -254,7 +271,6 @@ function App() {
+           }, '-=0.1');
+       } else {
+         setIsLoading(false);
+-        lenis.start();
+       }
+ 
+       // â”€â”€ Scroll Progress Bar â”€â”€
+@@ -294,28 +310,7 @@ function App() {
+       });
+ 
+ 
+-      // â”€â”€ Stacking Cards Pinning â”€â”€
+-      gsap.utils.toArray<HTMLElement>('.stack-card').forEach((card) => {
+-        if (card.classList.contains('skills-section')) return; // Handled after horizontal scroll
+-        ScrollTrigger.create({
+-          trigger: card,
+-          start: () => card.offsetHeight > window.innerHeight ? "bottom bottom" : "top top",
+-          end: "max",
+-          pin: true,
+-          pinSpacing: false
+-        });
+-      });
+-      
+-      const sTrack = document.querySelector('.skills-track') as HTMLElement;
+-      if (sTrack) {
+-        ScrollTrigger.create({
+-          trigger: '.skills-section',
+-          start: () => `top+=${sTrack.scrollWidth * 0.6} top`,
+-          end: "max",
+-          pin: true,
+-          pinSpacing: false
+-        });
+-      }
++
+ 
+       // â”€â”€ Velocity-Based Skew on Scroll â”€â”€
+       let proxy = { skew: 0 };
+@@ -372,15 +367,18 @@ function App() {
+           '-=0.8'
+         );
+ 
+-      gsap.to(heroLines, {
+-        opacity: 0.15,
+-        scrollTrigger: {
+-          trigger: '.hero-section',
+-          start: 'top top',
+-          end: 'bottom top',
+-          scrub: true,
++      gsap.fromTo(heroLines, 
++        { opacity: 1 },
++        {
++          opacity: 0.15,
++          scrollTrigger: {
++            trigger: '.hero-section',
++            start: 'top top',
++            end: 'bottom top',
++            scrub: true,
++          }
+         }
+-      });
++      );
+ 
+       // â”€â”€ Word Highlight on scroll (About Section) â”€â”€
+       const highlightWords = gsap.utils.toArray<HTMLElement>('.highlight-word');
+@@ -451,39 +449,47 @@ function App() {
+         );
+       });
+ 
+-      // â”€â”€ Horizontal scroll for skills â”€â”€
+-      const skillsTrack = document.querySelector('.skills-track') as HTMLElement;
++      // â”€â”€ Two-row skills parallax â€” row1 drifts right, row2 drifts left â”€â”€
+       const skillsBgText = document.querySelector('.skills-bg-text') as HTMLElement;
+-      if (skillsTrack) {
+-        gsap.to(skillsTrack, {
+-          x: () => -(skillsTrack.scrollWidth - window.innerWidth + 80),
+-          ease: 'none',
+-          scrollTrigger: {
+-            trigger: '.skills-section',
+-            start: 'top top',
+-            end: () => `+=${skillsTrack.scrollWidth * 0.6}`,
+-            scrub: 1,
+-            pin: true,
+-            anticipatePin: 1,
+-            onUpdate: (self) => {
+-              gsap.to('.skills-progress-bar', { scaleX: self.progress, duration: 0.1 });
+-            }
+-          },
+-        });
++      const mm = gsap.matchMedia();
++
++      mm.add('(min-width: 769px)', () => {
++        const row1 = document.querySelector('.skills-track-row1') as HTMLElement;
++        const row2 = document.querySelector('.skills-track-row2') as HTMLElement;
++
++        const sectionTrigger = {
++          trigger: '.skills-section',
++          start: 'top bottom',
++          end: 'bottom top',
++          scrub: 1.5,
++        };
++
++        if (row1) {
++          gsap.fromTo(row1,
++            { x: -180 },
++            { x: 180, ease: 'none', scrollTrigger: { ...sectionTrigger } }
++          );
++        }
++
++        if (row2) {
++          gsap.fromTo(row2,
++            { x: 180 },
++            { x: -180, ease: 'none', scrollTrigger: { ...sectionTrigger } }
++          );
++        }
+ 
+         if (skillsBgText) {
+-          gsap.to(skillsBgText, {
+-            x: () => -(skillsBgText.scrollWidth - window.innerWidth) * 0.35,
+-            ease: 'none',
+-            scrollTrigger: {
+-              trigger: '.skills-section',
+-              start: 'top top',
+-              end: () => `+=${skillsTrack.scrollWidth * 0.6}`,
+-              scrub: 1,
+-            }
+-          });
++          gsap.fromTo(skillsBgText,
++            { x: -80, opacity: 0 },
++            { x: 80, opacity: 1, ease: 'none', scrollTrigger: { ...sectionTrigger } }
++          );
+         }
+-      }
++
++        return () => {
++          const els = [row1, row2, skillsBgText].filter(Boolean) as HTMLElement[];
++          gsap.set(els, { clearProps: 'x,transform' });
++        };
++      });
+ 
+       // â”€â”€ Experience counter roll-in â”€â”€
+       gsap.utils.toArray<HTMLElement>('.counter-value').forEach((el) => {
+@@ -541,10 +547,12 @@ function App() {
+     let cursorCleanup: (() => void) | undefined;
+ 
+     if (cursor && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
++      let isHoveringProject = false;
+       const moveCursor = (e: MouseEvent) => {
+-        gsap.to(cursor, { x: e.clientX - 4, y: e.clientY - 4, duration: 0.5, ease: 'power3.out' });
++        cursor.style.transform = `translate3d(${e.clientX - 4}px, ${e.clientY - 4}px, 0)`;
+         if (preview) {
+-          gsap.to(preview, { x: e.clientX, y: e.clientY, duration: 0.8, ease: 'power3.out' });
++          const scale = isHoveringProject ? 1 : 0.8;
++          preview.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0) translate(-50%, -50%) scale(${scale})`;
+         }
+       };
+       window.addEventListener('mousemove', moveCursor);
+@@ -554,18 +562,20 @@ function App() {
+         el.addEventListener('mouseenter', () => {
+           cursor.classList.add('expanded');
+           if (el.classList.contains('project-row') && preview) {
++            isHoveringProject = true;
+             const imgUrl = el.getAttribute('data-image');
+             if (imgUrl) {
+               const imgEl = preview.querySelector('img');
+               if (imgEl) imgEl.src = imgUrl;
+-              gsap.to(preview, { opacity: 1, scale: 1, duration: 0.4, ease: 'power3.out' });
++              preview.style.opacity = '1';
+             }
+           }
+         });
+         el.addEventListener('mouseleave', () => {
+           cursor.classList.remove('expanded');
+           if (el.classList.contains('project-row') && preview) {
+-            gsap.to(preview, { opacity: 0, scale: 0.8, duration: 0.4, ease: 'power3.out' });
++            isHoveringProject = false;
++            preview.style.opacity = '0';
+           }
+         });
+       });
+@@ -625,8 +635,6 @@ function App() {
+ 
+     return () => {
+       ctx.revert();
+-      gsap.ticker.remove(updateLenis);
+-      lenis.destroy();
+       cursorCleanup?.();
+     };
+   }, []);
+@@ -667,6 +675,11 @@ function App() {
+         </div>
+       </div>
+ 
++      <motion.main initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
++        {/* Navigation */}
++        <nav className="nav">
++          <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
++
+       {/* Slide-Over Project Drawer */}
+       <div
+         className={`drawer-backdrop ${activeProject ? 'visible' : ''}`}
+@@ -740,7 +753,7 @@ function App() {
+             <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+               <span className="magnetic" style={{ fontSize: '0.85rem', fontWeight: 500, letterSpacing: '0.05em' }}>RN</span>
+               <button
+-                onClick={() => setIsDarkMode(!isDarkMode)}
++                onClick={toggleDarkMode}
+                 className="label magnetic"
+                 style={{ padding: '4px 8px', border: '1px solid currentColor', borderRadius: '4px' }}
+               >
+@@ -889,35 +902,38 @@ function App() {
+               <span className="label scramble-reveal">Selected Work</span>
+             </div>
+ 
+-            <div>
++            <div className="bento-grid">
+               {projects.map((p, i) => (
+                 <div
+                   key={i}
+-                  className="project-row"
+-                  data-image={p.image}
++                  className={`bento-card ${i === 0 ? 'col-span-2 row-span-2' : 'col-span-1 row-span-1'}`}
+                   onClick={() => setActiveProject(p)}
+                   style={{ cursor: 'pointer' }}
+                 >
+-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+-                    <div style={{ flex: 1 }}>
+-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px', marginBottom: '8px' }}>
+-                        <span className="project-index label" style={{ color: 'var(--border)', minWidth: '24px' }}>
+-                          {String(i + 1).padStart(2, '0')}
+-                        </span>
+-                        <h3 className="heading-md">{p.title}</h3>
+-                      </div>
+-                      <p className="body-text project-desc" style={{ maxWidth: '480px', marginLeft: '40px', marginBottom: '12px' }}>
+-                        {p.description}
+-                      </p>
+-                      <div className="project-tags" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginLeft: '40px' }}>
+-                        {p.tags.map((tag) => (
+-                          <span key={tag} className="skill-tag">{tag}</span>
+-                        ))}
+-                      </div>
+-                    </div>
+-                    <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingTop: '4px' }}>
++                  <div className="bento-card-header" style={{ marginBottom: '16px' }}>
++                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '8px' }}>
++                      <span className="label" style={{ color: 'var(--muted)' }}>
++                        {String(i + 1).padStart(2, '0')}
++                      </span>
+                       <span className="label">{p.year}</span>
+-                      <span className="project-arrow" style={{ fontSize: '1.1rem' }}>â†—</span>
++                    </div>
++                    <h3 className="heading-md" style={{ fontSize: i === 0 ? '1.8rem' : '1.25rem' }}>{p.title}</h3>
++                    <p className="body-text project-desc" style={{ marginTop: '8px', fontSize: i === 0 ? '1rem' : '0.9rem', color: 'var(--muted)' }}>
++                      {p.subtitle}
++                    </p>
++                  </div>
++                  
++                  {i === 0 && (
++                    <div style={{ margin: '16px 0', flex: 1, borderRadius: '8px', overflow: 'hidden' }}>
++                      <img src={p.image} alt={p.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
++                    </div>
++                  )}
++
++                  <div className="bento-card-content">
++                    <div className="project-tags" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
++                      {p.tags.map((tag) => (
++                        <span key={tag} className="skill-tag" style={{ border: '1px solid var(--border)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', backgroundColor: 'transparent' }}>{tag}</span>
++                      ))}
+                     </div>
+                   </div>
+                 </div>
+@@ -928,35 +944,51 @@ function App() {
+ 
+         {/* <div className="container"><div className="divider" /></div> */}
+ 
+-        {/* SKILLS â€” Horizontal Scroll */}
+-        <section className="skills-section stack-card" style={{ minHeight: '80vh', overflow: 'hidden', position: 'relative' }}>
++        {/* SKILLS â€” Two-Row Parallax */}
++        <section className="skills-section stack-card" style={{ padding: '100px 0 120px', overflow: 'hidden', position: 'relative' }}>
+           <div className="skills-bg-text">
+             DEEP LEARNING â€¢ NLP â€¢ COMPUTER VISION â€¢ LLMS â€¢ TRANSFORMERS â€¢ PYTORCH â€¢ TENSORFLOW â€¢ JAVASCRIPT â€¢ PYTHON
+           </div>
+-          <div className="skills-progress-container">
+-            <div className="skills-progress-bar" />
+-          </div>
+-          <div className="skills-track" style={{ display: 'flex', alignItems: 'center', height: '100%', gap: 'clamp(40px, 6vw, 80px)', paddingLeft: 'clamp(20px, 5vw, 80px)', whiteSpace: 'nowrap', willChange: 'transform' }}>
+-            {/* Intro panel */}
+-            <div style={{ flexShrink: 0, maxWidth: '420px', whiteSpace: 'normal', paddingRight: '40px' }}>
+-              <span className="label" style={{ marginBottom: '16px', display: 'block' }}>Expertise</span>
+-              <h2 className="heading-lg" style={{ marginBottom: '16px' }}>Tools & technologies I work with daily.</h2>
++
++          {/* Section header */}
++          <div className="container" style={{ marginBottom: '64px', position: 'relative', zIndex: 2 }}>
++            <div className="header-bg" style={{ maxWidth: '600px' }}>
++              <span className="label" style={{ marginBottom: '12px', display: 'block' }}>Expertise</span>
++              <h2 className="heading-lg" style={{ marginBottom: '16px' }}>Tools &amp; technologies I work with daily.</h2>
+               <p className="body-text">From research prototypes to production systems, these are the skills that define my craft.</p>
+             </div>
++          </div>
+ 
+-            <div style={{ width: '1px', height: '120px', background: 'var(--border)', flexShrink: 0 }} />
++          {/* Row 1 â€” drifts left â†’ right on scroll */}
++          <div
++            className="skills-track skills-track-row1"
++            style={{ display: 'flex', gap: 'clamp(16px, 2.5vw, 32px)', marginBottom: '20px', willChange: 'transform', paddingLeft: '0' }}
++          >
++            {[...skills, ...skills].map((skill, i) => (
++              <div key={`r1-${i}`} className="skill-card" style={{ flexShrink: 0 }}>
++                <span className="label" style={{ marginBottom: '8px', display: 'block' }}>
++                  {String((i % skills.length) + 1).padStart(2, '0')}
++                </span>
++                <span style={{ fontSize: 'clamp(1.1rem, 2vw, 1.6rem)', fontFamily: 'var(--serif)', fontWeight: 400 }}>{skill}</span>
++              </div>
++            ))}
++            <span className="swipe-hint">â‡¢</span>
++          </div>
+ 
+-            {/* Skill cards */}
+-            {skills.map((skill, i) => (
+-              <div
+-                key={skill}
+-                className="skill-card"
+-                style={{ flexShrink: 0 }}
+-              >
+-                <span className="label" style={{ marginBottom: '8px', display: 'block' }}>{String(i + 1).padStart(2, '0')}</span>
+-                <span style={{ fontSize: 'clamp(1.2rem, 2.5vw, 1.8rem)', fontFamily: 'var(--serif)', fontWeight: 400 }}>{skill}</span>
++          {/* Row 2 â€” drifts right â†’ left on scroll */}
++          <div
++            className="skills-track skills-track-row2"
++            style={{ display: 'flex', gap: 'clamp(16px, 2.5vw, 32px)', willChange: 'transform' }}
++          >
++            {[...skills.slice().reverse(), ...skills.slice().reverse()].map((skill, i) => (
++              <div key={`r2-${i}`} className="skill-card" style={{ flexShrink: 0 }}>
++                <span className="label" style={{ marginBottom: '8px', display: 'block' }}>
++                  {String((i % skills.length) + 1).padStart(2, '0')}
++                </span>
++                <span style={{ fontSize: 'clamp(1.1rem, 2vw, 1.6rem)', fontFamily: 'var(--serif)', fontWeight: 400 }}>{skill}</span>
+               </div>
+             ))}
++            <span className="swipe-hint">â‡¢</span>
+           </div>
+         </section>
+ 
+@@ -1081,7 +1113,7 @@ function App() {
+             </div>
+           </div>
+         </section>
+-      </div>
++      </motion.main>
+     </>
+   );
+ }
+

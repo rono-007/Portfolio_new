@@ -44,7 +44,21 @@ body {
   font-weight: 400;
   line-height: 1.6;
   overflow-x: hidden;
-  transition: background 0.8s ease, color 0.8s ease;
+}
+
+/* View Transitions for Dark Mode */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
 }
 
 
@@ -260,15 +274,6 @@ button {
     pointer-events: none;
     z-index: 9999;
     mix-blend-mode: difference;
-    transition: width 0.3s, height 0.3s, margin 0.3s;
-  }
-
-  .cursor-dot.expanded {
-    width: 40px;
-    height: 40px;
-    margin: -16px 0 0 -16px;
-    background: rgba(255, 255, 255, 0.15);
-    mix-blend-mode: normal;
   }
 }
 
@@ -312,68 +317,429 @@ button {
 }
 
 /* ========================================
-   Responsive
+   Responsive — Mobile-First Breakpoints
 ======================================== */
-@media (max-width: 768px) {
+
+
+/* ── Small mobile (max 480px) ── */
+@media (max-width: 480px) {
+  html {
+    font-size: 15px;
+  }
+
+  .container {
+    padding: 0 16px;
+  }
+
   .hide-mobile {
     display: none !important;
   }
 
-  .project-row .project-arrow {
-    opacity: 1;
-    transform: translateX(0);
+  /* Nav */
+  .nav {
+    padding: 16px 0;
   }
 
-  /* Override text and tag margins inside project row */
-  .project-row p.project-desc,
-  .project-row .project-tags {
-    margin-left: 0 !important;
-  }
-
-  /* Reduce typography clamps slightly to prevent overflow */
-  .heading-xl {
-    font-size: clamp(2.4rem, 12vw, 4rem) !important;
-  }
-
-  /* Adjust hero layout spacing */
+  /* Hero */
   .hero-section {
-    padding-top: 12vh !important;
+    min-height: 100dvh !important;
+    padding-top: 80px !important;
+    padding-bottom: 40px !important;
+  }
+
+  .heading-xl {
+    font-size: clamp(2.6rem, 14vw, 3.5rem) !important;
+  }
+
+  .heading-lg {
+    font-size: clamp(1.6rem, 8vw, 2.4rem) !important;
+  }
+
+  .heading-md {
+    font-size: clamp(1.2rem, 5vw, 1.6rem) !important;
+  }
+
+  /* Hero image - full width on small mobile */
+  .hero-image-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: clamp(240px, 60vw, 320px) !important;
+    justify-content: center;
+  }
+
+  /* Skills section — two rows, touch-scrollable on small mobile */
+  .skills-section {
+    padding: 48px 0 56px !important;
+    overflow: hidden !important;
   }
 
   .skills-bg-text {
-    font-size: clamp(4rem, 15vw, 8rem) !important;
+    display: none !important;
   }
 
-  /* Adjust skills track spacing */
   .skills-track {
-    gap: 32px !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 12px !important;
+    padding: 0 16px !important;
+    transform: none !important;
+    will-change: auto !important;
   }
 
-  .skills-track .skill-card {
-    min-width: 140px;
-    padding: 16px;
+  .skills-track::-webkit-scrollbar {
+    display: none;
   }
 
-  /* Footnote mobile adjustments */
+  .skill-card {
+    flex-shrink: 0 !important;
+    min-width: 130px !important;
+    padding: 14px 12px !important;
+  }
+
+  /* Bento grid */
+  .bento-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  .bento-card.col-span-2,
+  .bento-card.col-span-1 {
+    grid-column: span 1 !important;
+  }
+
+  .bento-card.row-span-2,
+  .bento-card.row-span-1 {
+    grid-row: span 1 !important;
+  }
+
+  /* Drawer */
+  .project-drawer {
+    width: 100% !important;
+    padding: 20px 16px !important;
+  }
+
+  .drawer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  /* Footer */
+  .contact-section {
+    padding: 48px 0 32px !important;
+  }
+
+  /* Footnote popup */
   .footnote-popup {
-    width: 250px;
+    width: 220px;
+    left: 0;
+    transform: translateY(-12px);
+  }
+
+  /* Viewport frame lines — hidden on small screens */
+  .viewport-frame {
+    display: none !important;
+  }
+
+  .corner-meta {
+    display: none !important;
+  }
+
+  /* Marquee */
+  .marquee-band {
+    padding: 28px 0;
+  }
+}
+
+/* ── Tablet (481px – 768px) ── */
+@media (min-width: 481px) and (max-width: 768px) {
+  html {
+    font-size: 15px;
   }
 
   .container {
     padding: 0 24px;
   }
 
-  /* Slide-Over Project Drawer mobile full width */
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .nav {
+    padding: 20px 0;
+  }
+
+  .hero-section {
+    min-height: 90vh !important;
+    padding-top: 90px !important;
+  }
+
+  .heading-xl {
+    font-size: clamp(2.8rem, 11vw, 4.5rem) !important;
+  }
+
+  .heading-lg {
+    font-size: clamp(1.8rem, 6vw, 2.8rem) !important;
+  }
+
+  /* Hero image — slightly constrained */
+  .hero-image-wrapper {
+    max-width: 360px !important;
+    height: clamp(280px, 50vw, 380px) !important;
+  }
+
+  /* Skills section — two rows, touch-scrollable on tablet */
+  .skills-section {
+    padding: 56px 0 64px !important;
+    overflow: hidden !important;
+  }
+
+  .skills-bg-text {
+    display: none !important;
+  }
+
+  .skills-track {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 14px !important;
+    padding: 0 24px !important;
+    transform: none !important;
+    will-change: auto !important;
+  }
+
+  .skills-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .skill-card {
+    flex-shrink: 0 !important;
+    min-width: 150px !important;
+    padding: 16px 14px !important;
+  }
+
+  /* Bento grid — 2 columns */
+  .bento-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 14px;
+  }
+
+  .bento-card.col-span-2 {
+    grid-column: span 2 !important;
+  }
+
+  .bento-card.col-span-1 {
+    grid-column: span 1 !important;
+  }
+
+  .bento-card.row-span-2,
+  .bento-card.row-span-1 {
+    grid-row: span 1 !important;
+  }
+
+  /* Drawer */
   .project-drawer {
-    width: 100% !important;
-    padding: 24px 16px !important;
+    width: 85% !important;
+    padding: 24px 20px !important;
   }
 
   .drawer-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    grid-template-columns: 1fr !important;
+    gap: 14px;
+  }
+
+  /* Viewport frame */
+  .viewport-frame {
+    display: none !important;
+  }
+
+  .corner-meta {
+    display: none !important;
+  }
+
+  /* Footnote popup */
+  .footnote-popup {
+    width: 260px;
+  }
+
+  /* Project row tweaks */
+  .project-row .project-arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .project-row p.project-desc,
+  .project-row .project-tags {
+    margin-left: 0 !important;
   }
 }
+
+/* ── Wide tablet / small laptop (769px – 1024px) ── */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .container {
+    padding: 0 32px;
+  }
+
+  /* Viewport frame */
+  .viewport-frame .v-line.left {
+    left: 24px;
+  }
+
+  .viewport-frame .v-line.right {
+    right: 24px;
+  }
+
+  .viewport-frame .h-line.top {
+    top: 24px;
+  }
+
+  .viewport-frame .h-line.bottom {
+    bottom: 24px;
+  }
+
+  .corner-meta.top-left {
+    top: 36px;
+    left: 36px;
+  }
+
+  .corner-meta.top-right {
+    top: 36px;
+    right: 36px;
+  }
+
+  .corner-meta.bottom-left {
+    bottom: 36px;
+    left: 36px;
+  }
+
+  .corner-meta.bottom-right {
+    bottom: 36px;
+    right: 36px;
+  }
+
+  /* Bento grid — 3 column */
+  .bento-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  /* Drawer width */
+  .project-drawer {
+    width: clamp(320px, 55vw, 520px) !important;
+  }
+
+  /* Skill card size */
+  .skill-card {
+    min-width: 140px;
+  }
+
+  .skills-track-wrapper {
+    margin-left: 24px;
+    margin-right: 24px;
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+
+  .nav {
+    left: 24px;
+    right: 24px;
+    padding: 36px 0 16px;
+  }
+
+  .nav .container {
+    padding: 0 140px;
+  }
+}
+
+/* ── Desktop (1025px+) ── */
+@media (min-width: 1025px) {
+  .nav {
+    padding: 56px 0 24px;
+    left: 40px;
+    right: 40px;
+  }
+
+  .nav .container {
+    padding: 0 160px;
+  }
+
+  .skills-track-wrapper {
+    margin-left: 40px;
+    margin-right: 40px;
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+
+  /* Bento grid */
+  .bento-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    grid-auto-rows: minmax(180px, auto);
+  }
+
+  .bento-card.col-span-2 {
+    grid-column: span 2;
+  }
+
+  .bento-card.col-span-1 {
+    grid-column: span 1;
+  }
+
+  .bento-card.row-span-2 {
+    grid-row: span 2;
+  }
+
+  .bento-card.row-span-1 {
+    grid-row: span 1;
+  }
+}
+
+/* ── 4K / ultra-wide (1600px+) ── */
+@media (min-width: 1600px) {
+  .container {
+    max-width: 1400px;
+  }
+
+  html {
+    font-size: 17px;
+  }
+}
+
+/* ── Shared: any screen ≤ 768px ── */
+@media (max-width: 768px) {
+
+  /* Always show arrow on mobile */
+  .project-row .project-arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+
+  /* Marquee spacing */
+  .marquee-band {
+    padding: 32px 0;
+  }
+
+  /* Social tooltip positioning fix on mobile */
+  .social-tooltip {
+    display: none;
+  }
+
+  /* Ensure footer wraps gracefully */
+  .contact-section>.container>div:last-child {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Inline footnote popup: prefer top side to avoid off-screen */
+  .footnote-popup {
+    left: 50%;
+    transform: translateX(-50%) translateY(-12px);
+  }
+}
+
 
 /* ========================================
    Smooth scrollbar styling
@@ -438,6 +804,7 @@ button {
   overflow: hidden;
   will-change: transform, opacity;
   border-radius: 4px;
+  transition: transform 0.12s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease;
 }
 
 .project-preview-img {
@@ -519,7 +886,7 @@ button {
    Skill Cards
 ======================================== */
 .skill-card {
-  padding: clamp(20px, 3vw, 32px);
+  padding: clamp(24px, 4vw, 40px);
   border: 1px solid var(--border);
   min-width: 160px;
   transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
@@ -554,13 +921,14 @@ button {
 }
 
 /* ========================================
-   Skills Section (Horizontal Scroll — Black Block)
+   Skills Section (Two-Row Parallax — Black Block)
 ======================================== */
 .skills-section {
   background: #0a0a0a !important;
   color: #f5f3f0 !important;
   border-top: 1px solid #1a1a1a;
   border-bottom: 1px solid #1a1a1a;
+  padding: clamp(80px, 10vh, 120px) 0;
 }
 
 .skills-section .label {
@@ -571,9 +939,17 @@ button {
   color: #a0a0a0 !important;
 }
 
-.skills-section .skills-track {
+/* Each row is a flex strip that overflows; parent clips it */
+.skills-track-wrapper {
+  overflow: visible;
+}
+
+.skills-track {
+  display: flex;
+  flex-wrap: nowrap;
   z-index: 2;
   position: relative;
+  overflow: visible;
 }
 
 .skills-section .skill-card {
@@ -596,35 +972,17 @@ button {
 
 .skills-bg-text {
   position: absolute;
-  top: 55%;
+  top: 50%;
   left: 0;
   transform: translateY(-50%);
   font-family: var(--serif);
   font-size: clamp(8rem, 20vw, 16rem);
   font-weight: 400;
-  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.05);
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.04);
   color: transparent;
   white-space: nowrap;
   pointer-events: none;
   z-index: 1;
-  will-change: transform;
-}
-
-.skills-section .skills-progress-container {
-  position: absolute;
-  bottom: 40px;
-  left: clamp(20px, 5vw, 80px);
-  width: 200px;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.1);
-  z-index: 10;
-}
-
-.skills-section .skills-progress-bar {
-  height: 100%;
-  background: #e6e3df;
-  transform-origin: left;
-  transform: scaleX(0);
   will-change: transform;
 }
 
@@ -771,7 +1129,7 @@ button {
   }
 
   .nav .container {
-    padding: 0 16px;
+    padding: 0 160px;
   }
 }
 
@@ -952,29 +1310,131 @@ button {
   padding: 20px 0;
 }
 
-/* ========================================
-   Stack Card (Pinning Sections)
-   ======================================== */
 .stack-card {
   position: relative;
   background: var(--bg);
-  box-shadow: 0 -20px 40px rgba(0,0,0,0.02);
-  transition: background 0.8s ease;
-  will-change: transform;
 }
 
-:root.dark-mode .stack-card {
-  box-shadow: 0 -20px 40px rgba(0,0,0,0.4);
+/* ─────────────────────────────────────
+   Bento Grid
+───────────────────────────────────── */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  grid-auto-rows: minmax(180px, auto);
 }
 
-.hero-section.stack-card { z-index: 1; }
-.about-section.stack-card { z-index: 2; }
-.footnote-section.stack-card { z-index: 3; }
+.bento-card {
+  background: rgba(120, 120, 120, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+}
 
-.projects-section.stack-card { z-index: 4; }
+.bento-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  border-color: var(--muted);
+}
 
-.skills-section.stack-card { z-index: 5; background: #0a0a0a; }
+.bento-card-header {
+  margin-bottom: 24px;
+}
 
-.experience-section.stack-card { z-index: 6; }
-.education-section.stack-card { z-index: 7; }
-.contact-section.stack-card { z-index: 8; }
+.bento-card.col-span-2 {
+  grid-column: span 2;
+}
+
+.bento-card.col-span-1 {
+  grid-column: span 1;
+}
+
+.bento-card.row-span-2 {
+  grid-row: span 2;
+}
+
+.bento-card.row-span-1 {
+  grid-row: span 1;
+}
+
+@media (max-width: 768px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bento-card.col-span-2,
+  .bento-card.col-span-1 {
+    grid-column: span 1;
+  }
+
+  .bento-card.row-span-2,
+  .bento-card.row-span-1 {
+    grid-row: span 1;
+  }
+}
+
+/* ─────────────────────────────────────
+   UI Customizations (Gradient, Glassmorphism)
+───────────────────────────────────── */
+.skills-section {
+  border-top: none;
+  border-bottom: none;
+}
+
+.skills-section::before,
+.skills-section::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+
+.skills-section::before {
+  top: 0;
+}
+
+.skills-section::after {
+  bottom: 0;
+}
+
+.header-bg {
+  background: rgba(var(--bg), 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  display: inline-block;
+  margin-left: 0;
+}
+
+.swipe-hint {
+  font-size: 1.5rem;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.3;
+    transform: translateY(-50%) translateX(0);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: translateY(-50%) translateX(5px);
+  }
+
+  100% {
+    opacity: 0.3;
+    transform: translateY(-50%) translateX(0);
+  }
+}

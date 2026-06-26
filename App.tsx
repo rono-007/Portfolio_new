@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Lenis from 'lenis';
+import { motion } from 'framer-motion';
+
+export type PanelId = 'about' | 'projects' | 'skills' | 'work' | 'education' | 'contact' | null;
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -159,13 +162,52 @@ function App() {
   const mainRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
-  const lenisRef = useRef<any>(null);
   const projectPreviewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isDarkMode) document.documentElement.classList.add('dark-mode');
     else document.documentElement.classList.remove('dark-mode');
   }, [isDarkMode]);
+
+  const toggleDarkMode = (e: React.MouseEvent) => {
+    const x = e.clientX;
+    const y = e.clientY;
+
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y)
+    );
+
+    if (!document.startViewTransition) {
+      setIsDarkMode(prev => !prev);
+      return;
+    }
+
+    const transition = document.startViewTransition(() => {
+      flushSync(() => {
+        setIsDarkMode(prev => !prev);
+      });
+    });
+
+    transition.ready.then(() => {
+      const clipPath = [
+        `circle(0px at ${x}px ${y}px)`,
+        `circle(${endRadius}px at ${x}px ${y}px)`
+      ];
+      document.documentElement.animate(
+        {
+          clipPath: clipPath
+        },
+        {
+          duration: 800,
+          easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+          pseudoElement: '::view-transition-new(root)'
+        }
+      );
+    });
+  };
+
+
 
   useEffect(() => {
     const updateTime = () => {
@@ -185,32 +227,12 @@ function App() {
   useEffect(() => {
     if (isLoading || activeProject !== null) {
       document.body.style.overflow = 'hidden';
-      lenisRef.current?.stop();
     } else {
       document.body.style.overflow = '';
-      lenisRef.current?.start();
     }
   }, [isLoading, activeProject]);
 
   useEffect(() => {
-    // ── Lenis Smooth Scroll ──
-    const lenis = new Lenis({
-      autoRaf: false,
-      lerp: 0.1, // standard linear interpolation, more responsive than slow duration ease
-      smoothWheel: true,
-    });
-    lenisRef.current = lenis;
-    lenis.stop(); // Stop scroll immediately on mount
-
-    lenis.on('scroll', ScrollTrigger.update);
-
-    // Sync Lenis with GSAP ticker loop and remove to prevent memory leaks/duplicate calls
-    const updateLenis = (time: number) => {
-      lenis.raf(time * 1000);
-    };
-    gsap.ticker.add(updateLenis);
-    gsap.ticker.lagSmoothing(0);
-
     const ctx = gsap.context(() => {
       // ── Preloader Timeline ──
       const countObj = { val: 0 };
@@ -220,7 +242,6 @@ function App() {
       const preloaderTimeline = gsap.timeline({
         onComplete: () => {
           setIsLoading(false);
-          lenis.start();
           heroTl.play();
 
           gsap.utils.toArray<HTMLElement>('.meta-label').forEach((el) => {
@@ -251,10 +272,14 @@ function App() {
             yPercent: -100,
             duration: 0.8,
             ease: 'power4.inOut',
-          }, '-=0.1');
+          }, '-=0.1')
+          .fromTo(mainRef.current,
+            { scale: 0.96, y: 50 },
+            { scale: 1, y: 0, duration: 1.2, ease: 'power4.out', clearProps: 'all' },
+            '-=0.6'
+          );
       } else {
         setIsLoading(false);
-        lenis.start();
       }
 
       // ── Scroll Progress Bar ──
@@ -294,28 +319,7 @@ function App() {
       });
 
 
-      // ── Stacking Cards Pinning ──
-      gsap.utils.toArray<HTMLElement>('.stack-card').forEach((card) => {
-        if (card.classList.contains('skills-section')) return; // Handled after horizontal scroll
-        ScrollTrigger.create({
-          trigger: card,
-          start: () => card.offsetHeight > window.innerHeight ? "bottom bottom" : "top top",
-          end: "max",
-          pin: true,
-          pinSpacing: false
-        });
-      });
-      
-      const sTrack = document.querySelector('.skills-track') as HTMLElement;
-      if (sTrack) {
-        ScrollTrigger.create({
-          trigger: '.skills-section',
-          start: () => `top+=${sTrack.scrollWidth * 0.6} top`,
-          end: "max",
-          pin: true,
-          pinSpacing: false
-        });
-      }
+
 
       // ── Velocity-Based Skew on Scroll ──
       let proxy = { skew: 0 };
@@ -340,7 +344,10 @@ function App() {
 
       // ── Section Scramble Reveals ──
       gsap.utils.toArray<HTMLElement>('.scramble-reveal').forEach((el) => {
-        const text = el.textContent || '';
+        const text = el.getAttribute('data-text') || el.textContent || '';
+        if (!el.getAttribute('data-text')) {
+          el.setAttribute('data-text', text);
+        }
         el.textContent = ''; // clear initially
         ScrollTrigger.create({
           trigger: el,
@@ -350,6 +357,10 @@ function App() {
             scrambleText(el, text);
             gsap.fromTo(el, { opacity: 0 }, { opacity: 1, duration: 0.5 });
           }
+        });
+
+        el.addEventListener('mouseenter', () => {
+          scrambleText(el, text);
         });
       });
 
@@ -372,15 +383,18 @@ function App() {
           '-=0.8'
         );
 
-      gsap.to(heroLines, {
-        opacity: 0.15,
-        scrollTrigger: {
-          trigger: '.hero-section',
-          start: 'top top',
-          end: 'bottom top',
-          scrub: true,
+      gsap.fromTo(heroLines,
+        { opacity: 1 },
+        {
+          opacity: 0.15,
+          scrollTrigger: {
+            trigger: '.hero-section',
+            start: 'top top',
+            end: 'bottom top',
+            scrub: true,
+          }
         }
-      });
+      );
 
       // ── Word Highlight on scroll (About Section) ──
       const highlightWords = gsap.utils.toArray<HTMLElement>('.highlight-word');
@@ -451,39 +465,47 @@ function App() {
         );
       });
 
-      // ── Horizontal scroll for skills ──
-      const skillsTrack = document.querySelector('.skills-track') as HTMLElement;
+      // ── Two-row skills parallax — row1 drifts right, row2 drifts left ──
       const skillsBgText = document.querySelector('.skills-bg-text') as HTMLElement;
-      if (skillsTrack) {
-        gsap.to(skillsTrack, {
-          x: () => -(skillsTrack.scrollWidth - window.innerWidth + 80),
-          ease: 'none',
-          scrollTrigger: {
-            trigger: '.skills-section',
-            start: 'top top',
-            end: () => `+=${skillsTrack.scrollWidth * 0.6}`,
-            scrub: 1,
-            pin: true,
-            anticipatePin: 1,
-            onUpdate: (self) => {
-              gsap.to('.skills-progress-bar', { scaleX: self.progress, duration: 0.1 });
-            }
-          },
-        });
+      const mm = gsap.matchMedia();
+
+      mm.add('(min-width: 769px)', () => {
+        const row1 = document.querySelector('.skills-track-row1') as HTMLElement;
+        const row2 = document.querySelector('.skills-track-row2') as HTMLElement;
+
+        const sectionTrigger = {
+          trigger: '.skills-section',
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 1.5,
+        };
+
+        if (row1) {
+          gsap.fromTo(row1,
+            { x: -180 },
+            { x: 180, ease: 'none', scrollTrigger: { ...sectionTrigger } }
+          );
+        }
+
+        if (row2) {
+          gsap.fromTo(row2,
+            { x: 180 },
+            { x: -180, ease: 'none', scrollTrigger: { ...sectionTrigger } }
+          );
+        }
 
         if (skillsBgText) {
-          gsap.to(skillsBgText, {
-            x: () => -(skillsBgText.scrollWidth - window.innerWidth) * 0.35,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: '.skills-section',
-              start: 'top top',
-              end: () => `+=${skillsTrack.scrollWidth * 0.6}`,
-              scrub: 1,
-            }
-          });
+          gsap.fromTo(skillsBgText,
+            { x: -80, opacity: 0 },
+            { x: 80, opacity: 1, ease: 'none', scrollTrigger: { ...sectionTrigger } }
+          );
         }
-      }
+
+        return () => {
+          const els = [row1, row2, skillsBgText].filter(Boolean) as HTMLElement[];
+          gsap.set(els, { clearProps: 'x,transform' });
+        };
+      });
 
       // ── Experience counter roll-in ──
       gsap.utils.toArray<HTMLElement>('.counter-value').forEach((el) => {
@@ -541,19 +563,79 @@ function App() {
     let cursorCleanup: (() => void) | undefined;
 
     if (cursor && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      // Initialize GSAP QuickTo setters for smooth performance and elastic lag
+      const cursorX = gsap.quickTo(cursor, "x", { duration: 0.15, ease: "power3.out" });
+      const cursorY = gsap.quickTo(cursor, "y", { duration: 0.15, ease: "power3.out" });
+
+      const previewX = preview ? gsap.quickTo(preview, "x", { duration: 0.25, ease: "power3.out" }) : null;
+      const previewY = preview ? gsap.quickTo(preview, "y", { duration: 0.25, ease: "power3.out" }) : null;
+
+      let isHoveringProject = false;
+      let latchedEl: HTMLElement | null = null;
+
       const moveCursor = (e: MouseEvent) => {
-        gsap.to(cursor, { x: e.clientX - 4, y: e.clientY - 4, duration: 0.5, ease: 'power3.out' });
-        if (preview) {
-          gsap.to(preview, { x: e.clientX, y: e.clientY, duration: 0.8, ease: 'power3.out' });
+        if (latchedEl) {
+          const rect = latchedEl.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          const dx = e.clientX - centerX;
+          const dy = e.clientY - centerY;
+
+          // Drag the magnetic element slightly toward mouse
+          gsap.to(latchedEl, { x: dx * 0.35, y: dy * 0.35, duration: 0.3, ease: 'power2.out' });
+
+          // Snap the cursor toward the center of the magnetic button (leaving 15% follow lag)
+          const targetX = centerX + dx * 0.15;
+          const targetY = centerY + dy * 0.15;
+          cursorX(targetX - 4);
+          cursorY(targetY - 4);
+        } else {
+          cursorX(e.clientX - 4);
+          cursorY(e.clientY - 4);
+        }
+
+        if (preview && previewX && previewY) {
+          previewX(e.clientX);
+          previewY(e.clientY);
         }
       };
+
       window.addEventListener('mousemove', moveCursor);
 
-      const interactiveEls = document.querySelectorAll('a, button, .project-row, .skill-tag');
-      interactiveEls.forEach((el) => {
-        el.addEventListener('mouseenter', () => {
-          cursor.classList.add('expanded');
+      // Select interactive elements
+      const interactiveEls = document.querySelectorAll('a, button, .project-row, .skill-tag, .magnetic');
+      const listeners: Array<{ el: Element; type: string; fn: any }> = [];
+
+      const addListener = (el: Element, type: string, fn: any) => {
+        el.addEventListener(type, fn);
+        listeners.push({ el, type, fn });
+      };
+
+      interactiveEls.forEach((el: any) => {
+        const isMagnetic = el.classList.contains('magnetic');
+
+        const onMouseEnter = () => {
+          if (isMagnetic) {
+            latchedEl = el;
+            gsap.to(cursor, {
+              scale: 5,
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              mixBlendMode: 'normal',
+              duration: 0.3,
+              ease: 'back.out(2)'
+            });
+          } else {
+            gsap.to(cursor, {
+              scale: 4,
+              backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              mixBlendMode: 'normal',
+              duration: 0.3,
+              ease: 'back.out(2)'
+            });
+          }
+
           if (el.classList.contains('project-row') && preview) {
+            isHoveringProject = true;
             const imgUrl = el.getAttribute('data-image');
             if (imgUrl) {
               const imgEl = preview.querySelector('img');
@@ -561,78 +643,82 @@ function App() {
               gsap.to(preview, { opacity: 1, scale: 1, duration: 0.4, ease: 'power3.out' });
             }
           }
-        });
-        el.addEventListener('mouseleave', () => {
-          cursor.classList.remove('expanded');
-          if (el.classList.contains('project-row') && preview) {
-            gsap.to(preview, { opacity: 0, scale: 0.8, duration: 0.4, ease: 'power3.out' });
+        };
+
+        const onMouseLeave = () => {
+          if (isMagnetic) {
+            gsap.to(latchedEl, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.3)' });
+            latchedEl = null;
           }
-        });
-      });
 
-      // Magnetic Hover
-      const magneticEls = document.querySelectorAll('.magnetic');
-      magneticEls.forEach((el: any) => {
-        el.addEventListener('mousemove', (e: MouseEvent) => {
-          const rect = el.getBoundingClientRect();
-          const x = e.clientX - rect.left - rect.width / 2;
-          const y = e.clientY - rect.top - rect.height / 2;
-          gsap.to(el, { x: x * 0.4, y: y * 0.4, duration: 0.4, ease: 'power2.out' });
-        });
-        el.addEventListener('mouseleave', () => {
-          gsap.to(el, { x: 0, y: 0, duration: 0.8, ease: 'elastic.out(1, 0.3)' });
-        });
-      });
-
-      // 3D Tilt for Hero Image
-      const heroImgWrapper = document.querySelector('.hero-image-wrapper');
-      const heroImg = document.querySelector('.hero-image');
-      if (heroImgWrapper && heroImg) {
-        heroImgWrapper.addEventListener('mousemove', (e: any) => {
-          const rect = heroImgWrapper.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          const centerX = rect.width / 2;
-          const centerY = rect.height / 2;
-
-          const rotateX = ((y - centerY) / centerY) * -15;
-          const rotateY = ((x - centerX) / centerX) * 15;
-
-          gsap.to(heroImg, {
-            rotateX,
-            rotateY,
-            scale: 1.05,
-            duration: 0.5,
-            ease: 'power2.out',
-            transformPerspective: 1000,
-            transformOrigin: 'center'
-          });
-        });
-
-        heroImgWrapper.addEventListener('mouseleave', () => {
-          gsap.to(heroImg, {
-            rotateX: 0,
-            rotateY: 0,
+          gsap.to(cursor, {
             scale: 1,
-            duration: 1,
-            ease: 'elastic.out(1, 0.3)'
+            backgroundColor: 'var(--fg)',
+            mixBlendMode: 'difference',
+            duration: 0.3,
+            ease: 'power2.out'
           });
-        });
-      }
 
-      cursorCleanup = () => window.removeEventListener('mousemove', moveCursor);
+          if (el.classList.contains('project-row') && preview) {
+            isHoveringProject = false;
+            gsap.to(preview, { opacity: 0, scale: 0.8, duration: 0.3, ease: 'power2.out' });
+          }
+        };
+
+        addListener(el, 'mouseenter', onMouseEnter);
+        addListener(el, 'mouseleave', onMouseLeave);
+      });
+
+      cursorCleanup = () => {
+        window.removeEventListener('mousemove', moveCursor);
+        listeners.forEach(({ el, type, fn }) => el.removeEventListener(type, fn));
+      };
+    }
+
+    // 3D Tilt for Hero Image
+    const heroImgWrapper = document.querySelector('.hero-image-wrapper');
+    const heroImg = document.querySelector('.hero-image');
+    if (heroImgWrapper && heroImg) {
+      heroImgWrapper.addEventListener('mousemove', (e: any) => {
+        const rect = heroImgWrapper.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+
+        const rotateX = ((y - centerY) / centerY) * -15;
+        const rotateY = ((x - centerX) / centerX) * 15;
+
+        gsap.to(heroImg, {
+          rotateX,
+          rotateY,
+          scale: 1.05,
+          duration: 0.5,
+          ease: 'power2.out',
+          transformPerspective: 1000,
+          transformOrigin: 'center'
+        });
+      });
+
+      heroImgWrapper.addEventListener('mouseleave', () => {
+        gsap.to(heroImg, {
+          rotateX: 0,
+          rotateY: 0,
+          scale: 1,
+          duration: 1,
+          ease: 'elastic.out(1, 0.3)'
+        });
+      });
     }
 
     return () => {
       ctx.revert();
-      gsap.ticker.remove(updateLenis);
-      lenis.destroy();
       cursorCleanup?.();
     };
   }, []);
 
   return (
-    <>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
       {isLoading && (
         <div className="preloader-overlay">
           <div className="preloader-text-wrapper">
@@ -740,7 +826,7 @@ function App() {
             <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
               <span className="magnetic" style={{ fontSize: '0.85rem', fontWeight: 500, letterSpacing: '0.05em' }}>RN</span>
               <button
-                onClick={() => setIsDarkMode(!isDarkMode)}
+                onClick={toggleDarkMode}
                 className="label magnetic"
                 style={{ padding: '4px 8px', border: '1px solid currentColor', borderRadius: '4px' }}
               >
@@ -889,35 +975,38 @@ function App() {
               <span className="label scramble-reveal">Selected Work</span>
             </div>
 
-            <div>
+            <div className="bento-grid">
               {projects.map((p, i) => (
                 <div
                   key={i}
-                  className="project-row"
-                  data-image={p.image}
+                  className={`bento-card ${i === 0 ? 'col-span-2 row-span-2' : 'col-span-1 row-span-1'}`}
                   onClick={() => setActiveProject(p)}
                   style={{ cursor: 'pointer' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px', marginBottom: '8px' }}>
-                        <span className="project-index label" style={{ color: 'var(--border)', minWidth: '24px' }}>
-                          {String(i + 1).padStart(2, '0')}
-                        </span>
-                        <h3 className="heading-md">{p.title}</h3>
-                      </div>
-                      <p className="body-text project-desc" style={{ maxWidth: '480px', marginLeft: '40px', marginBottom: '12px' }}>
-                        {p.description}
-                      </p>
-                      <div className="project-tags" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginLeft: '40px' }}>
-                        {p.tags.map((tag) => (
-                          <span key={tag} className="skill-tag">{tag}</span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingTop: '4px' }}>
+                  <div className="bento-card-header" style={{ marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span className="label" style={{ color: 'var(--muted)' }}>
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
                       <span className="label">{p.year}</span>
-                      <span className="project-arrow" style={{ fontSize: '1.1rem' }}>↗</span>
+                    </div>
+                    <h3 className="heading-md" style={{ fontSize: i === 0 ? '1.8rem' : '1.25rem' }}>{p.title}</h3>
+                    <p className="body-text project-desc" style={{ marginTop: '8px', fontSize: i === 0 ? '1rem' : '0.9rem', color: 'var(--muted)' }}>
+                      {p.subtitle}
+                    </p>
+                  </div>
+
+                  {i === 0 && (
+                    <div style={{ margin: '16px 0', flex: 1, borderRadius: '8px', overflow: 'hidden' }}>
+                      <img src={p.image} alt={p.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  )}
+
+                  <div className="bento-card-content">
+                    <div className="project-tags" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {p.tags.map((tag) => (
+                        <span key={tag} className="skill-tag" style={{ border: '1px solid var(--border)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', backgroundColor: 'transparent' }}>{tag}</span>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -928,35 +1017,53 @@ function App() {
 
         {/* <div className="container"><div className="divider" /></div> */}
 
-        {/* SKILLS — Horizontal Scroll */}
-        <section className="skills-section stack-card" style={{ minHeight: '80vh', overflow: 'hidden', position: 'relative' }}>
+        {/* SKILLS — Two-Row Parallax */}
+        <section className="skills-section stack-card" style={{ padding: '100px 0 120px', overflow: 'hidden', position: 'relative' }}>
           <div className="skills-bg-text">
             DEEP LEARNING • NLP • COMPUTER VISION • LLMS • TRANSFORMERS • PYTORCH • TENSORFLOW • JAVASCRIPT • PYTHON
           </div>
-          <div className="skills-progress-container">
-            <div className="skills-progress-bar" />
+
+          {/* Section header */}
+          <div className="container" style={{ marginBottom: '64px', position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'center' }}>
+            <div className="header-bg">
+              <span className="label" style={{ marginBottom: '12px', display: 'block' }}>Expertise</span>
+              <h2 className="heading-lg" style={{ marginBottom: '16px' }}>Tools &amp; technologies I work with daily.</h2>
+              <p className="body-text" style={{ maxWidth: '480px' }}>From research prototypes to production systems, these are the skills that define my craft.</p>
+            </div>
           </div>
-          <div className="skills-track" style={{ display: 'flex', alignItems: 'center', height: '100%', gap: 'clamp(40px, 6vw, 80px)', paddingLeft: 'clamp(20px, 5vw, 80px)', whiteSpace: 'nowrap', willChange: 'transform' }}>
-            {/* Intro panel */}
-            <div style={{ flexShrink: 0, maxWidth: '420px', whiteSpace: 'normal', paddingRight: '40px' }}>
-              <span className="label" style={{ marginBottom: '16px', display: 'block' }}>Expertise</span>
-              <h2 className="heading-lg" style={{ marginBottom: '16px' }}>Tools & technologies I work with daily.</h2>
-              <p className="body-text">From research prototypes to production systems, these are the skills that define my craft.</p>
+
+          {/* Row 1 — drifts left → right on scroll */}
+          <div className="skills-track-wrapper">
+            <div
+              className="skills-track skills-track-row1"
+              style={{ display: 'flex', gap: 'clamp(16px, 2.5vw, 32px)', marginBottom: '20px', willChange: 'transform', paddingLeft: '0', position: 'relative' }}
+            >
+              <span className="swipe-hint hide-desktop" style={{ position: 'absolute', right: '20px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }}>⇢</span>
+              {[...skills, ...skills].map((skill, i) => (
+                <div key={`r1-${i}`} className="skill-card" style={{ flexShrink: 0 }}>
+                  <span className="label" style={{ marginBottom: '8px', display: 'block' }}>
+                    {String((i % skills.length) + 1).padStart(2, '0')}
+                  </span>
+                  <span style={{ fontSize: 'clamp(1.1rem, 2vw, 1.6rem)', fontFamily: 'var(--serif)', fontWeight: 400 }}>{skill}</span>
+                </div>
+              ))}
             </div>
 
-            <div style={{ width: '1px', height: '120px', background: 'var(--border)', flexShrink: 0 }} />
-
-            {/* Skill cards */}
-            {skills.map((skill, i) => (
-              <div
-                key={skill}
-                className="skill-card"
-                style={{ flexShrink: 0 }}
-              >
-                <span className="label" style={{ marginBottom: '8px', display: 'block' }}>{String(i + 1).padStart(2, '0')}</span>
-                <span style={{ fontSize: 'clamp(1.2rem, 2.5vw, 1.8rem)', fontFamily: 'var(--serif)', fontWeight: 400 }}>{skill}</span>
-              </div>
-            ))}
+            {/* Row 2 — drifts right → left on scroll */}
+            <div
+              className="skills-track skills-track-row2"
+              style={{ display: 'flex', gap: 'clamp(16px, 2.5vw, 32px)', willChange: 'transform', position: 'relative' }}
+            >
+              <span className="swipe-hint hide-desktop" style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%) scaleX(-1)', opacity: 0.5 }}>⇢</span>
+              {[...skills.slice().reverse(), ...skills.slice().reverse()].map((skill, i) => (
+                <div key={`r2-${i}`} className="skill-card" style={{ flexShrink: 0 }}>
+                  <span className="label" style={{ marginBottom: '8px', display: 'block' }}>
+                    {String((i % skills.length) + 1).padStart(2, '0')}
+                  </span>
+                  <span style={{ fontSize: 'clamp(1.1rem, 2vw, 1.6rem)', fontFamily: 'var(--serif)', fontWeight: 400 }}>{skill}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -1082,7 +1189,7 @@ function App() {
           </div>
         </section>
       </div>
-    </>
+    </motion.div>
   );
 }
 
